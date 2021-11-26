@@ -1,8 +1,8 @@
-const { connectDb } = require("./db");
+const { connectDb, connectStorage } = require("./db");
 
 exports.findRestaurants = (req, res) => {
   const db = connectDb();
-  console.log (req.params.city)
+  const bucket = connectStorage();
   let  matchingRestaurants = []
   
   let foodPreferences = {
@@ -13,26 +13,30 @@ exports.findRestaurants = (req, res) => {
 
   let cities = new Map();
 
-  let combinedArray = foodPreferences.food.concat(foodPreferences.cuisine);
   db.collection("allRestaurants")
-    .where("priceLevel", "==", foodPreferences.budget)
+    //.where("priceLevel", "==", foodPreferences.budget)
     .where("city","==", req.params.city)
-    .where("cuisine", "array-contains-any", combinedArray)
+    .where("cuisine", "array-contains-any", foodPreferences.cuisine)
     .get()
     .then((restaurantMatchCollection) => {
-      console.log("here")
       restaurantMatchCollection.docs.map((restaurantDoc) => {
-        console.log("here1")
+     
         let restaurant = restaurantDoc.data();
         restaurant.id = restaurantDoc.id;
-        let relScore = 0;
-        let intersection = restaurant.cuisine.filter(
-          (element) => combinedArray.indexOf(element) !== -1
-        );
-        relScore += intersection.length;
+        let foodRestrictionMatch = foodPreferences.food.every(elem => restaurant.cuisine.includes(elem))
+        if (foodRestrictionMatch) {
+          const file = bucket.file(`restaurant-images/restImages/${restaurant.id}.jpeg`);
+          restaurant.url = file.publicUrl();
+        
+          let relScore = 0;
+          let intersection = restaurant.cuisine.filter(
+            (element) => foodPreferences.cuisine.indexOf(element) !== -1
+          );
+          relScore += intersection.length;
 
-        restaurant.relScore = relScore;
-        matchingRestaurants.push(restaurant);
+          restaurant.relScore = relScore;
+          matchingRestaurants.push(restaurant);
+          }
       });
       
       res.status(201).send(matchingRestaurants);
