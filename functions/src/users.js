@@ -6,6 +6,7 @@ exports.createUser =(req,res) => {
   let userObj = {
     name: req.body.name,
     email: req.body.email,
+    bookmarks: []
   };
   db.collection("users").doc(uid).get ()
   .then (docRef => {
@@ -80,10 +81,6 @@ exports.bookmarkRestaurant =(req,res) => {
   .catch(err => res.status(500).send(err))
 }
 
-exports.getBookmarks =(req,res) => {
-  db.collection('users').doc(uid).update (item)
-    .then (res.status(201).send(item))
-}
 exports.addUserDestination =(req,res) => {
   const db = connectDb();
   const bucket = connectStorage();

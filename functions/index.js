@@ -7,7 +7,7 @@ const cors = require("cors");
 const { getCuisine } = require("./src/cuisine.js");
 const { getFood } = require("./src/food.js");
 const { createUser, getUser, bookmarkRestaurant, addUserDestination, getBookmarks,login } = require("./src/users.js");
-const { getCityByName } = require("./src/cities.js");
+const { getCityByName, deleteRestaurantsByCity } = require("./src/cities.js");
 const { findBestMatch } = require("./src/search.js");
 const { findRestaurants } = require("./src/searchRestaurant.js");
 
@@ -35,7 +35,8 @@ app.use(cors());
 
 app.get("/cuisine", getCuisine);
 app.get("/food", getFood);
-app.get("/cities/:city", getCityByName);
+//app.get("/cities/:city", getCityByName);
+app.get("/deleteCity", deleteRestaurantsByCity);
 app.post("/search", findBestMatch);
 app.post("/search/:city", findRestaurants);
 app.post("/createUser", createUser);

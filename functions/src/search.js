@@ -5,8 +5,8 @@ exports.findBestMatch = (req, res) => {
   const bucket = connectStorage();
   
   let queryResponse = {
-    matchingCities: [],
-    matchingRestaurants: []
+    topCity: {},
+   // matchingRestaurants: []
   };
   let foodPreferences = {
     cuisine: req.body.cuisine,
@@ -45,21 +45,43 @@ exports.findBestMatch = (req, res) => {
           }
         }
       });
-      console.log([...cities.entries()].reduce((a, e ) => e[1] > a[1] ? e : a))
-      cities.forEach ((value, key) => {
-        let cityObj = {
-          name: key,
-          score: value,
-          url: ""
+      if (cities.size===0) {
+        let error= {
+          error: "There is no restaurants found for your criteria. Please try again"
+        }
+        res.status(201).send(error); 
+        return
+      }
+      let topCity = [...cities.entries()].reduce((a, e ) => e[1] > a[1] ? e : a)
+      queryResponse.topCity = {
+          name: topCity[0],
+          score: topCity[1],
+          url: "",
+          description: "",
+          restaurantCount: 0
         }
       
-        const file = bucket.file(`city-images/${key.toLowerCase()}.jpeg`);
-        cityObj.url = file.publicUrl();
-        
-        queryResponse.matchingCities.push(cityObj)
-        queryResponse.matchingRestaurants = matchingRestaurants
+        const file = bucket.file(`city-images/${queryResponse.topCity.name.toLowerCase()}.jpeg`);
+        queryResponse.topCity.url = file.publicUrl();
+        matchingRestaurants.map ((item) => {
+          if (item.city===queryResponse.topCity.name)
+            {
+              queryResponse.topCity.restaurantCount=queryResponse.topCity.restaurantCount+1
+            //restImageFile = bucket.file(`restaurant-images/restImages/${item.id}.jpeg`);
+            //item.url = restImageFile.publicUrl();
+            //queryResponse.matchingRestaurants.push(item)
+            }
+        })
+
+      db.collection("cities")
+      .where("name", "==", queryResponse.topCity.name)
+      .get()
+      .then((collection) => {
+        collection.docs.map((doc) => {
+          queryResponse.topCity.description = doc.data().description    
+          res.status(201).send(queryResponse); 
+        })
       })
       
-      res.status(201).send(queryResponse);
-    })
+      })
 };
